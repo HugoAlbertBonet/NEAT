@@ -29,8 +29,7 @@ class Node:
 class Network:
     def __init__(self, inputs, outputs):
         self.nodes = []
-        self.connections = []
-        self.connections_set = set()
+        self.connections = {}
         self.inputs = inputs
         self.outputs = outputs
         self.hidden = 0
@@ -39,8 +38,7 @@ class Network:
         for i in range(outputs):
             self.nodes.append(Node(len(self.nodes), NodeType.OUTPUT))
             for j in range(inputs):
-                self.connections.append(Connection(len(self.connections), self.nodes[j], self.nodes[-1], random.uniform(-1,1)))
-                self.connections_set.add((j, len(self.nodes)-1))
+                self.connections[(j, len(self.nodes)-1)] = Connection(len(self.connections), self.nodes[j], self.nodes[-1], random.uniform(-1,1))
 
         
     
@@ -71,30 +69,37 @@ class NEAT:
         self.evolution = []
 
     def crossover(self, parent1, parent2):
-        pass
+        child = Network(parent1.inputs, parent1.outputs)
+        if len(parent1.nodes) > len(parent2.nodes):
+            child.nodes = parent1.nodes.copy()
+        else: 
+            child.nodes = parent2.nodes.copy()
+        for con in parent1.connections:
+            if (con.node_in.id, con.node_out.id) in parent
 
     def mutation_node(self, parent):
         while True:
             i = random.randint(0, len(parent.connections) - 1)
-            if parent.connections[i].enabled:
+            j = random.randint(i+1, len(parent.connections) - 1)
+            if parent.connections[(i, j)].enabled:
                 break
         parent.nodes.append(Node(len(parent.nodes), NodeType.HIDDEN))
         parent.hidden += 1
-        parent.connections[i].disable()
-        parent.connections.append(Connection(len(parent.connections), parent.connections[i].node_in, parent.nodes[-1], weight=random.uniform(-1,1)))
-        parent.connections_set.add((parent.connections[i].node_in.index, parent.nodes[-1].index))
-        parent.connections.append(Connection(len(parent.connections), parent.nodes[-1], parent.connections[i].node_out, weight=random.uniform(-1,1)))
-        parent.connections_set.add((parent.nodes[-1].index, parent.connections[i].node_out.index))
+        parent.connections[(i, j)].disable()
+        parent.connections[(parent.connections[(i, j)].node_in.id, parent.nodes[-1].id)] = Connection(len(parent.connections), parent.connections[(i, j)].node_in, parent.nodes[-1], weight=random.uniform(-1,1))
+        parent.connections[(parent.nodes[-1].id, parent.connections[(i, j)].node_out.id)] = Connection(len(parent.connections), parent.nodes[-1], parent.connections[(i, j)].node_out, weight=random.uniform(-1,1))
 
 
     def mutation_connection(self, parent):
         while True:
-            a, b = random.randint(0, len(parent.nodes)-1), random.randint(0, len(parent.nodes))
-            if a != b and (a, b) not in parent.connections_set:
+            a, b = random.randint(0, len(parent.nodes)-1), random.randint(0, len(parent.nodes) - 1)
+            if a != b and (a, b) not in parent.connections:
                 break
-        parent.connections.append(Connection(len(parent.connections), parent.nodes[a], parent.nodes[b], weight=random.uniform(-1,1)))
-        parent.connections_set.add((a, b))
+        parent.connections[(a, b)] = Connection(len(parent.connections), parent.nodes[a], parent.nodes[b], weight=random.uniform(-1,1))
+        
 
     def mutation_weight(self, parent):
         i = random.randint(0, len(parent.connections) - 1)
-        parent.connections[i].weight = random.uniform(-1,1)
+        j = random.randint(i + 1, len(parent.connections) - 1)
+        parent.connections[(i, j)].weight = random.uniform(-1,1)
+
