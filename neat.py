@@ -26,6 +26,9 @@ class Node:
         self.id = node_id
         self.type = node_type
 
+    def copy(self):
+        return Node(self.id, self.type)
+
 class Network:
     def __init__(self, inputs, outputs):
         self.nodes = []
@@ -71,11 +74,22 @@ class NEAT:
     def crossover(self, parent1, parent2):
         child = Network(parent1.inputs, parent1.outputs)
         if len(parent1.nodes) > len(parent2.nodes):
-            child.nodes = parent1.nodes.copy()
+            child.nodes = [node.copy() for node in parent1.nodes]
         else: 
-            child.nodes = parent2.nodes.copy()
-        for con in parent1.connections:
-            if (con.node_in.id, con.node_out.id) in parent
+            child.nodes = [node.copy() for node in parent2.nodes]
+        for index, con in parent1.connections.items():
+            if index in parent2.connections:
+                if parent2.connections[index].enabled and con.enabled:
+                    child.connections[index] = Connection(len(child.connections), child.nodes[parent1.connections[index].node_in.id], child.nodes[parent1.nodes[-1].id], weight= parent1.connections[index].weight) if random.random() > 0.5 else Connection(len(child.connections), child.nodes[parent2.connections[index].node_in.id], child.nodes[parent2.nodes[-1].id], weight= parent2.connections[index].weight)
+                else: child.connections[index] = Connection(len(child.connections), child.nodes[parent1.connections[index].node_in.id], child.nodes[parent1.nodes[-1].id], weight=random.uniform(-1,1), enabled=False)
+
+            else: child.connections[index] = Connection(len(child.connections), child.nodes[parent1.connections[index].node_in.id], child.nodes[parent1.nodes[-1].id], weight= parent1.connections[index].weight)
+
+        for index, con in parent2.connections.items():
+            if index not in parent1.connections: 
+                child.connections[index] = Connection(len(child.connections), child.nodes[parent2.connections[index].node_in.id], child.nodes[parent2.nodes[-1].id], weight= parent2.connections[index].weight)
+
+        return child
 
     def mutation_node(self, parent):
         while True:
