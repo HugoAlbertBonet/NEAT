@@ -48,7 +48,7 @@ class Network:
 
 class NEAT:
 
-    def __init__(self,time_deadline,problem_path,init="cluster",mode="agglomerative",**kwargs): 
+    def __init__(self, dist_threshold, max_iter, error_threshold): 
         """
         Initialize an instance of class GA given a time deadline and an instance path.
 
@@ -61,15 +61,9 @@ class NEAT:
         :param mode: Specific parameter that indicates the mode of the clusters.
         :type mode: str
         """
-        self.problem_path = problem_path
-        self.best_solution = None 
-        self.time_deadline = time_deadline 
-        self.best_fitness = None
-        self.init = init
-        self.mode = mode
-        self.n_vehicles = None
-
-        self.evolution = []
+        self.dist_thr = dist_threshold
+        self.max_iter = max_iter
+        self.error_thr = error_threshold
 
     def crossover(self, parent1, parent2):
         child = Network(parent1.inputs, parent1.outputs)
@@ -116,4 +110,16 @@ class NEAT:
         i = random.randint(0, len(parent.connections) - 1)
         j = random.randint(i + 1, len(parent.connections) - 1)
         parent.connections[(i, j)].weight = random.uniform(-1,1)
+
+    def distance(self, indiv1, indiv2):
+        pass
+    
+    def sharing(self, distance):
+        return 0 if distance > self.dist_thr else 1
+    
+    def fitness(self, indiv):
+        pass
+
+    def adjusted_fitness(self, indiv):
+        pass
 
